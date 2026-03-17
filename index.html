@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Firebase Form</title>
+</head>
+<body>
+
+<h2>Форма</h2>
+
+<input type="text" id="name" placeholder="Имя"><br><br>
+<input type="email" id="email" placeholder="Email"><br><br>
+<button onclick="sendData()">Отправить</button>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBx4U8l3IS2ZaLEJnSFUzpcqu3qlaJgy30",
+    authDomain: "myproject-df6ca.firebaseapp.com",
+    projectId: "myproject-df6ca"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.sendData = async function () {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+
+    try {
+      await addDoc(collection(db, "requests"), {
+        name: name,
+        email: email,
+        time: new Date()
+      });
+
+      alert("Данные отправлены!");
+    } catch (e) {
+      console.error(e);
+      alert("Ошибка!");
+    }
+  };
+</script>
+
+</body>
+</html>
