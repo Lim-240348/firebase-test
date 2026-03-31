@@ -1,48 +1,131 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Firebase Form</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Cloud App</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
+        /* Блок профиля */
+        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
+
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0056b3; }
+        .logout-btn { background: #ff4757; padding: 8px 15px; width: auto; font-size: 14px; }
+        
+        .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; width: 100%; max-width: 500px; }
+        .time { font-size: 11px; color: #999; }
+    </style>
 </head>
 <body>
 
-<h2>Форма</h2>
+    <div id="authSection" class="container" style="text-align: center;">
+        <button id="loginBtn">Войти через Google</button>
+        <div id="userInfo" style="display: none;" class="auth-bar">
+            <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
+            <span id="userName" style="font-weight: bold;"></span>
+            <button id="logoutBtn" class="logout-btn">Выйти</button>
+        </div>
+    </div>
 
-<input type="text" id="name" placeholder="Имя"><br><br>
-<input type="email" id="email" placeholder="Email"><br><br>
-<button onclick="sendData()">Отправить</button>
+    <div id="messageForm" class="container">
+        <h3>Отправить заявку</h3>
+        <input type="text" id="name" placeholder="Ваше имя">
+        <input type="email" id="email" placeholder="Ваш Email">
+        <button id="mainBtn">Отправить в облако</button>
+    </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBx4U8l3IS2ZaLEJnSFUzpcqu3qlaJgy30",
-    authDomain: "myproject-df6ca.firebaseapp.com",
-    projectId: "myproject-df6ca"
-  };
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+        // Конфигурация
+        const firebaseConfig = {
+            apiKey: "AIzaSyBx4U8l3IS2ZaLEJnSFUzpcqu3qlaJgy30",
+            authDomain: "myproject-df6ca.firebaseapp.com",
+            projectId: "myproject-df6ca"
+        };
 
-  window.sendData = async function () {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
-    try {
-      await addDoc(collection(db, "requests"), {
-        name: name,
-        email: email,
-        time: new Date()
-      });
+        // Элементы интерфейса
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userInfo = document.getElementById('userInfo');
+        const mainBtn = document.getElementById('mainBtn');
 
-      alert("Данные отправлены!");
-    } catch (e) {
-      console.error(e);
-      alert("Ошибка!");
-    }
-  };
-</script>
+        // --- ЛОГИКА АВТОРИЗАЦИИ ---
+        loginBtn.onclick = () => signInWithPopup(auth, provider);
+        logoutBtn.onclick = () => signOut(auth);
 
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginBtn.style.display = 'none';
+                userInfo.style.display = 'flex';
+                document.getElementById('userName').innerText = user.displayName;
+                document.getElementById('userPhoto').src = user.photoURL;
+                // Автозаполнение полей из профиля Google
+                document.getElementById('name').value = user.displayName;
+                document.getElementById('email').value = user.email;
+            } else {
+                loginBtn.style.display = 'block';
+                userInfo.style.display = 'none';
+            }
+        });
+
+        // --- ОТПРАВКА ДАННЫХ ---
+        mainBtn.onclick = async () => {
+            const nameValue = document.getElementById("name").value;
+            const emailValue = document.getElementById("email").value;
+
+            if (!nameValue || !emailValue) return alert("Заполните все поля!");
+
+            try {
+                await addDoc(collection(db, "requests"), {
+                    name: nameValue,
+                    email: emailValue,
+                    timestamp: serverTimestamp(), // Используем серверное время
+                    photo: auth.currentUser ? auth.currentUser.photoURL : null // Фото, если вошел
+                });
+                alert("Данные успешно отправлены!");
+                document.getElementById("name").value = "";
+                document.getElementById("email").value = "";
+            } catch (e) {
+                console.error(e);
+                alert("Ошибка доступа! Проверьте Rules в Firebase Console.");
+            }
+        };
+
+        // --- ОТОБРАЖЕНИЕ СПИСКА (FEED) ---
+        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const time = data.timestamp ? data.timestamp.toDate().toLocaleString() : "...";
+                feed.innerHTML += `
+                    <div class="post">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${data.photo || 'https://via.placeholder.com/30'}" style="width:30px; border-radius:50%">
+                            <b>${data.name}</b>
+                        </div>
+                        <p style="margin: 10px 0;">${data.email}</p>
+                        <span class="time">${time}</span>
+                    </div>
+                `;
+            });
+        });
+    </script>
 </body>
 </html>
