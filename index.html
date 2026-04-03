@@ -3,22 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Cloud App</title>
+    <title>Firebase Cloud App & Chat</title>
     <style>
         body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
         
         /* Блок профиля */
-        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; max-width: 500px; box-sizing: border-box;}
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
 
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; }
         button:hover { background: #0056b3; }
-        .logout-btn { background: #ff4757; padding: 8px 15px; width: auto; font-size: 14px; }
         
+        /* Кнопки управления */
+        .btn-group { display: flex; gap: 10px; margin-left: auto; }
+        .logout-btn { background: #ff4757; padding: 8px 15px; width: auto; font-size: 14px; }
+        .chat-toggle-btn { background: #2ed573; padding: 8px 15px; width: auto; font-size: 14px; }
+        .chat-toggle-btn:hover { background: #26af5f; }
+
+        /* Стили твоей оригинальной ленты заявок */
         .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; width: 100%; max-width: 500px; }
         .time { font-size: 11px; color: #999; }
+
+        /* --- СТИЛИ ЧАТА (НОВЫЕ) --- */
+        #chatSection { width: 100%; max-width: 500px; display: none; }
+        .users-list { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; margin-bottom: 15px; }
+        .user-card { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 65px; text-align: center;}
+        .user-card img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; }
+        .user-card.active img { border-color: #007bff; }
+        .user-card span { font-size: 11px; margin-top: 5px; color: #555; max-width: 65px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+
+        .chat-container { display: flex; flex-direction: column; height: 350px; border: 1px solid #eee; border-radius: 8px; background: #fff; }
+        .chat-header { padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; background: #f9f9f9; border-top-left-radius: 8px; border-top-right-radius: 8px;}
+        .messages-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #fcfdfe; }
+        
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 14px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        .msg.sent { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg.received { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 4px; }
+        
+        .input-area { display: flex; padding: 10px; border-top: 1px solid #eee; gap: 10px; }
+        .input-area input { flex: 1; margin: 0; }
+        .input-area button { width: auto; padding: 0 15px; }
     </style>
 </head>
 <body>
@@ -26,27 +52,49 @@
     <div id="authSection" class="container" style="text-align: center;">
         <button id="loginBtn">Войти через Google</button>
         <div id="userInfo" style="display: none;" class="auth-bar">
-            <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
-            <span id="userName" style="font-weight: bold;"></span>
-            <button id="logoutBtn" class="logout-btn">Выйти</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
+                <span id="userName" style="font-weight: bold;"></span>
+            </div>
+            <div class="btn-group">
+                <button id="toggleChatBtn" class="chat-toggle-btn">💬 Открыть чат</button>
+                <button id="logoutBtn" class="logout-btn">Выйти</button>
+            </div>
         </div>
     </div>
 
-    <div id="messageForm" class="container">
-        <h3>Отправить заявку</h3>
-        <input type="text" id="name" placeholder="Ваше имя">
-        <input type="email" id="email" placeholder="Ваш Email">
-        <button id="mainBtn">Отправить в облако</button>
+    <div id="appSection">
+        <div id="messageForm" class="container">
+            <h3>Отправить заявку</h3>
+            <input type="text" id="name" placeholder="Ваше имя">
+            <input type="email" id="email" placeholder="Ваш Email">
+            <button id="mainBtn">Отправить в облако</button>
+        </div>
+        <div id="feed" style="width: 100%; max-width: 500px;"></div>
     </div>
 
-    <div id="feed" style="width: 100%; max-width: 500px;"></div>
+    <div id="chatSection">
+        <div class="container">
+            <h3>Выберите собеседника:</h3>
+            <div class="users-list" id="usersList"></div>
+
+            <div class="chat-container">
+                <div class="chat-header" id="chatHeader">Выберите, кому написать...</div>
+                <div class="messages-box" id="messagesBox"></div>
+                <div class="input-area">
+                    <input type="text" id="messageInput" placeholder="Ваше сообщение...">
+                    <button id="sendBtn">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-        // Конфигурация
+        // Твоя конфигурация
         const firebaseConfig = {
             apiKey: "AIzaSyBx4U8l3IS2ZaLEJnSFUzpcqu3qlaJgy30",
             authDomain: "myproject-df6ca.firebaseapp.com",
@@ -58,32 +106,82 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        // Элементы интерфейса
+        // Элементы оригинального интерфейса
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const userInfo = document.getElementById('userInfo');
         const mainBtn = document.getElementById('mainBtn');
+        
+        // Элементы для переключения экранов
+        const toggleChatBtn = document.getElementById('toggleChatBtn');
+        const appSection = document.getElementById('appSection');
+        const chatSection = document.getElementById('chatSection');
+
+        // Элементы чата
+        const usersListDiv = document.getElementById('usersList');
+        const chatHeader = document.getElementById('chatHeader');
+        const messagesBox = document.getElementById('messagesBox');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        let currentUser = null;
+        let activeChatUser = null;
+        let unsubscribeMessages = null;
+        let isChatOpen = false;
 
         // --- ЛОГИКА АВТОРИЗАЦИИ ---
         loginBtn.onclick = () => signInWithPopup(auth, provider);
         logoutBtn.onclick = () => signOut(auth);
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
+                currentUser = user;
                 loginBtn.style.display = 'none';
                 userInfo.style.display = 'flex';
                 document.getElementById('userName').innerText = user.displayName;
                 document.getElementById('userPhoto').src = user.photoURL;
-                // Автозаполнение полей из профиля Google
+                
+                // Твое оригинальное автозаполнение
                 document.getElementById('name').value = user.displayName;
                 document.getElementById('email').value = user.email;
+
+                // Запись пользователя в базу для чата
+                await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
+                    name: user.displayName,
+                    photo: user.photoURL
+                }, { merge: true });
+
+                loadUsers();
             } else {
+                currentUser = null;
                 loginBtn.style.display = 'block';
                 userInfo.style.display = 'none';
+                // Сбрасываем вид
+                appSection.style.display = 'block';
+                chatSection.style.display = 'none';
+                toggleChatBtn.innerText = "💬 Открыть чат";
+                isChatOpen = false;
+                if (unsubscribeMessages) unsubscribeMessages();
             }
         });
 
-        // --- ОТПРАВКА ДАННЫХ ---
+        // --- ПЕРЕКЛЮЧЕНИЕ МЕЖДУ ЗАЯВКАМИ И ЧАТОМ ---
+        toggleChatBtn.onclick = () => {
+            if (!isChatOpen) {
+                appSection.style.display = 'none';
+                chatSection.style.display = 'block';
+                toggleChatBtn.innerText = "📋 К заявкам";
+                isChatOpen = true;
+            } else {
+                appSection.style.display = 'block';
+                chatSection.style.display = 'none';
+                toggleChatBtn.innerText = "💬 Открыть чат";
+                isChatOpen = false;
+            }
+        };
+
+        // --- ТВОЯ ОРИГИНАЛЬНАЯ ОТПРАВКА ЗАЯВОК ---
         mainBtn.onclick = async () => {
             const nameValue = document.getElementById("name").value;
             const emailValue = document.getElementById("email").value;
@@ -94,8 +192,8 @@
                 await addDoc(collection(db, "requests"), {
                     name: nameValue,
                     email: emailValue,
-                    timestamp: serverTimestamp(), // Используем серверное время
-                    photo: auth.currentUser ? auth.currentUser.photoURL : null // Фото, если вошел
+                    timestamp: serverTimestamp(),
+                    photo: auth.currentUser ? auth.currentUser.photoURL : null
                 });
                 alert("Данные успешно отправлены!");
                 document.getElementById("name").value = "";
@@ -106,9 +204,9 @@
             }
         };
 
-        // --- ОТОБРАЖЕНИЕ СПИСКА (FEED) ---
-        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-        onSnapshot(q, (snapshot) => {
+        // --- ТВОЕ ОРИГИНАЛЬНОЕ ОТОБРАЖЕНИЕ СПИСКА ЗАЯВОК (FEED) ---
+        const qRequests = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+        onSnapshot(qRequests, (snapshot) => {
             const feed = document.getElementById('feed');
             feed.innerHTML = "";
             snapshot.forEach((doc) => {
@@ -125,6 +223,76 @@
                     </div>
                 `;
             });
+        });
+
+        // --- ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ДЛЯ ЧАТА ---
+        function loadUsers() {
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                usersListDiv.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const userData = doc.data();
+                    if (userData.uid !== currentUser.uid) {
+                        const userCard = document.createElement('div');
+                        userCard.className = `user-card ${activeChatUser && activeChatUser.uid === userData.uid ? 'active' : ''}`;
+                        userCard.innerHTML = `
+                            <img src="${userData.photo || 'https://via.placeholder.com/40'}" alt="avatar">
+                            <span>${userData.name.split(' ')[0]}</span>
+                        `;
+                        userCard.onclick = () => selectUserChat(userData);
+                        usersListDiv.appendChild(userCard);
+                    }
+                });
+            });
+        }
+
+        // --- ВЫБОР ЧАТА ---
+        function selectUserChat(targetUser) {
+            activeChatUser = targetUser;
+            chatHeader.innerText = `Чат с: ${targetUser.name}`;
+            loadUsers(); 
+
+            const chatId = [currentUser.uid, targetUser.uid].sort().join('_');
+
+            if (unsubscribeMessages) unsubscribeMessages();
+
+            const qMsgs = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp", "asc"));
+            
+            unsubscribeMessages = onSnapshot(qMsgs, (snapshot) => {
+                messagesBox.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const msgData = doc.data();
+                    const isMine = msgData.senderId === currentUser.uid;
+                    
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = `msg ${isMine ? 'sent' : 'received'}`;
+                    msgDiv.innerText = msgData.text;
+                    messagesBox.appendChild(msgDiv);
+                });
+                messagesBox.scrollTop = messagesBox.scrollHeight;
+            });
+        }
+
+        // --- ОТПРАВКА СООБЩЕНИЯ ---
+        sendBtn.onclick = async () => {
+            const text = messageInput.value.trim();
+            if (!text || !activeChatUser) return;
+
+            const chatId = [currentUser.uid, activeChatUser.uid].sort().join('_');
+
+            try {
+                await addDoc(collection(db, "chats", chatId, "messages"), {
+                    text: text,
+                    senderId: currentUser.uid,
+                    timestamp: serverTimestamp()
+                });
+                messageInput.value = "";
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendBtn.click();
         });
     </script>
 </body>
