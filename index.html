@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firebase Cloud App & Chat</title>
     <style>
+        /* ОСНОВНЫЕ СТИЛИ */
         body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
         
-        /* Блок профиля */
+        /* БЛОК ПРОФИЛЯ */
         .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; max-width: 500px; box-sizing: border-box;}
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
 
@@ -20,17 +21,17 @@
         .logout-btn { background: #ff4757; padding: 8px 15px; width: auto; font-size: 14px; }
         .chat-toggle-btn { background: #2ed573; padding: 8px 15px; width: auto; font-size: 14px; }
 
-        /* Лента заявок */
-        .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 12px; width: 100%; max-width: 500px; box-sizing: border-box; }
-        .time { font-size: 11px; color: #999; }
+        /* ЛЕНТА ЗАЯВОК (FEED) */
+        .post { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; width: 100%; max-width: 500px; box-sizing: border-box; border: 1px solid #eee; }
+        .post-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .post-header b { font-size: 16px; }
+        .post-time { margin-left: auto; color: #999; font-size: 12px; }
+        .post-content { margin: 0 0 15px 0; color: #333; line-height: 1.5; }
 
-        /* КОММЕНТАРИИ */
-        .comment-section { margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
-        .comment-item { font-size: 13px; background: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 5px; }
-        .comment-item b { color: #007bff; margin-right: 5px; }
-        .comment-input-group { display: flex; gap: 5px; margin-top: 10px; }
-        .comment-input-group input { padding: 8px; font-size: 13px; margin: 0; }
-        .comment-input-group button { width: 40px; padding: 0; display: flex; justify-content: center; align-items: center; }
+        /* КНОПКА ЛАЙКА */
+        .like-badge { background: #f8f9fa; border-radius: 20px; padding: 5px 15px; display: inline-flex; align-items: center; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .like-badge:hover { background: #e9ecef; border-color: #ddd; }
+        .like-count { margin-left: 8px; font-size: 13px; font-weight: bold; color: #555; }
 
         /* СТИЛИ ЧАТА */
         #chatSection { width: 100%; max-width: 500px; display: none; }
@@ -41,9 +42,9 @@
         .user-card span { font-size: 11px; margin-top: 5px; color: #555; max-width: 65px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
         
         .chat-container { display: flex; flex-direction: column; height: 350px; border: 1px solid #eee; border-radius: 8px; background: #fff; }
-        .chat-header { padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; background: #f9f9f9; }
-        .messages-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 75%; padding: 8px 12px; border-radius: 14px; font-size: 14px; }
+        .chat-header { padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; background: #f9f9f9; border-radius: 8px 8px 0 0; }
+        .messages-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #fcfdfe; }
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 14px; font-size: 14px; word-wrap: break-word; }
         .msg.sent { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .msg.received { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 4px; }
     </style>
@@ -68,10 +69,10 @@
         <div id="messageForm" class="container">
             <h3>Отправить заявку</h3>
             <input type="text" id="name" placeholder="Ваше имя">
-            <input type="email" id="email" placeholder="Ваш Email / Сообщение">
+            <input type="text" id="email" placeholder="Текст сообщения">
             <button id="mainBtn">Отправить в облако</button>
         </div>
-        <div id="feed" style="width: 100%; max-width: 500px;"></div>
+        <div id="feed"></div>
     </div>
 
     <div id="chatSection">
@@ -91,9 +92,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+        // КОНФИГУРАЦИЯ
         const firebaseConfig = {
             apiKey: "AIzaSyBx4U8l3IS2ZaLEJnSFUzpcqu3qlaJgy30",
             authDomain: "myproject-df6ca.firebaseapp.com",
@@ -105,7 +107,7 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        // Элементы
+        // DOM ЭЛЕМЕНТЫ
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const userInfo = document.getElementById('userInfo');
@@ -118,13 +120,14 @@
         const messagesBox = document.getElementById('messagesBox');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
+        const feed = document.getElementById('feed');
 
         let currentUser = null;
         let activeChatUser = null;
         let unsubscribeMessages = null;
         let isChatOpen = false;
 
-        // --- АВТОРИЗАЦИЯ ---
+        // --- ЛОГИКА АВТОРИЗАЦИИ ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
@@ -133,7 +136,6 @@
                 document.getElementById('userName').innerText = user.displayName;
                 document.getElementById('userPhoto').src = user.photoURL;
                 document.getElementById('name').value = user.displayName;
-                document.getElementById('email').value = user.email;
 
                 await setDoc(doc(db, "users", user.uid), {
                     uid: user.uid, name: user.displayName, photo: user.photoURL
@@ -146,6 +148,7 @@
                 userInfo.style.display = 'none';
                 appSection.style.display = 'block';
                 chatSection.style.display = 'none';
+                isChatOpen = false;
                 if (unsubscribeMessages) unsubscribeMessages();
             }
         });
@@ -161,70 +164,69 @@
             toggleChatBtn.innerText = isChatOpen ? "📋 К заявкам" : "💬 Открыть чат";
         };
 
-        // --- ЗАЯВКИ ---
+        // --- ОТПРАВКА ЗАЯВОК ---
         mainBtn.onclick = async () => {
-            const n = document.getElementById("name").value;
-            const e = document.getElementById("email").value;
+            const n = document.getElementById("name").value.trim();
+            const e = document.getElementById("email").value.trim();
             if (!n || !e) return alert("Заполните поля!");
-            await addDoc(collection(db, "requests"), {
-                name: n, email: e, timestamp: serverTimestamp(), photo: currentUser?.photoURL
-            });
-            document.getElementById("email").value = "";
+
+            try {
+                await addDoc(collection(db, "requests"), {
+                    name: n,
+                    email: e, // Используем email как поле для текста сообщения
+                    timestamp: serverTimestamp(),
+                    photo: currentUser ? currentUser.photoURL : 'https://via.placeholder.com/30',
+                    likes: 0
+                });
+                document.getElementById("email").value = "";
+            } catch (err) {
+                alert("Ошибка! Проверьте авторизацию и правила в консоли.");
+            }
         };
 
-        // Лента заявок с комментариями
+        // --- ОТОБРАЖЕНИЕ ЛЕНТЫ (FEED) ---
         onSnapshot(query(collection(db, "requests"), orderBy("timestamp", "desc")), (snapshot) => {
-            const feed = document.getElementById('feed');
             feed.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const id = doc.id;
-                const time = data.timestamp ? data.timestamp.toDate().toLocaleString() : "...";
-                
+            if (snapshot.empty) {
+                feed.innerHTML = "<p style='text-align:center; color:#999;'>Сообщений пока нет...</p>";
+                return;
+            }
+
+            snapshot.forEach((requestDoc) => {
+                const data = requestDoc.data();
+                const id = requestDoc.id;
+                const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString() : "...";
+                const likes = data.likes || 0;
+
                 const post = document.createElement('div');
                 post.className = 'post';
                 post.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="${data.photo || ''}" style="width:30px; border-radius:50%">
+                    <div class="post-header">
+                        <img src="${data.photo || 'https://via.placeholder.com/30'}" style="width:35px; height:35px; border-radius:50%">
                         <b>${data.name}</b>
+                        <span class="post-time">${time}</span>
                     </div>
-                    <p>${data.email}</p>
-                    <span class="time">${time}</span>
-                    <div class="comment-section">
-                        <div id="comments-${id}"></div>
-                        <div class="comment-input-group">
-                            <input type="text" id="input-${id}" placeholder="Ваш комментарий...">
-                            <button onclick="window.addComment('${id}')">👍</button>
-                        </div>
+                    <p class="post-content">${data.email}</p>
+                    <div class="like-badge" onclick="window.addLike('${id}')">
+                        <span>👍</span>
+                        <span class="like-count">${likes}</span>
                     </div>
                 `;
                 feed.appendChild(post);
-                loadComments(id);
             });
         });
 
-        // --- ЛОГИКА КОММЕНТАРИЕВ ---
-        function loadComments(requestId) {
-            const box = document.getElementById(`comments-${requestId}`);
-            const q = query(collection(db, "requests", requestId, "comments"), orderBy("timestamp", "asc"));
-            onSnapshot(q, (snap) => {
-                box.innerHTML = "";
-                snap.forEach(d => {
-                    const c = d.data();
-                    box.innerHTML += `<div class="comment-item"><b>${c.userName}:</b> ${c.text}</div>`;
-                });
-            });
-        }
-
-        window.addComment = async (id) => {
-            if (!currentUser) return alert("Войдите!");
-            const input = document.getElementById(`input-${id}`);
-            const text = input.value.trim();
-            if (!text) return;
-            await addDoc(collection(db, "requests", id, "comments"), {
-                text: text, userName: currentUser.displayName, timestamp: serverTimestamp()
-            });
-            input.value = "";
+        // --- ЛОГИКА ЛАЙКОВ ---
+        window.addLike = async (id) => {
+            if (!auth.currentUser) {
+                return alert("Войдите в аккаунт, чтобы ставить лайки!");
+            }
+            try {
+                const docRef = doc(db, "requests", id);
+                await updateDoc(docRef, { likes: increment(1) });
+            } catch (e) {
+                console.error(e);
+            }
         };
 
         // --- ЛОГИКА ЧАТА ---
@@ -234,14 +236,14 @@
                 snapshot.forEach((doc) => {
                     const userData = doc.data();
                     if (userData.uid !== currentUser.uid) {
-                        const userCard = document.createElement('div');
-                        userCard.className = `user-card ${activeChatUser?.uid === userData.uid ? 'active' : ''}`;
-                        userCard.innerHTML = `
-                            <img src="${userData.photo || ''}" alt="avatar">
+                        const card = document.createElement('div');
+                        card.className = `user-card ${activeChatUser?.uid === userData.uid ? 'active' : ''}`;
+                        card.innerHTML = `
+                            <img src="${userData.photo || 'https://via.placeholder.com/40'}" alt="avatar">
                             <span>${userData.name.split(' ')[0]}</span>
                         `;
-                        userCard.onclick = () => selectUserChat(userData);
-                        usersListDiv.appendChild(userCard);
+                        card.onclick = () => selectUserChat(userData);
+                        usersListDiv.appendChild(card);
                     }
                 });
             });
@@ -250,31 +252,37 @@
         function selectUserChat(targetUser) {
             activeChatUser = targetUser;
             chatHeader.innerText = `Чат с: ${targetUser.name}`;
+            loadUsers(); 
+
             const chatId = [currentUser.uid, targetUser.uid].sort().join('_');
             if (unsubscribeMessages) unsubscribeMessages();
-            const qMsgs = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp", "asc"));
-            unsubscribeMessages = onSnapshot(qMsgs, (snapshot) => {
+
+            const q = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp", "asc"));
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
                 messagesBox.innerHTML = "";
                 snapshot.forEach((doc) => {
                     const m = doc.data();
-                    const msgDiv = document.createElement('div');
-                    msgDiv.className = `msg ${m.senderId === currentUser.uid ? 'sent' : 'received'}`;
-                    msgDiv.innerText = m.text;
-                    messagesBox.appendChild(msgDiv);
+                    const div = document.createElement('div');
+                    div.className = `msg ${m.senderId === currentUser.uid ? 'sent' : 'received'}`;
+                    div.innerText = m.text;
+                    messagesBox.appendChild(div);
                 });
                 messagesBox.scrollTop = messagesBox.scrollHeight;
             });
         }
 
         sendBtn.onclick = async () => {
-            const text = messageInput.value.trim();
-            if (!text || !activeChatUser) return;
+            const txt = messageInput.value.trim();
+            if (!txt || !activeChatUser) return;
             const chatId = [currentUser.uid, activeChatUser.uid].sort().join('_');
             await addDoc(collection(db, "chats", chatId, "messages"), {
-                text: text, senderId: currentUser.uid, timestamp: serverTimestamp()
+                text: txt, senderId: currentUser.uid, timestamp: serverTimestamp()
             });
             messageInput.value = "";
         };
+
+        messageInput.onkeypress = (e) => { if(e.key === 'Enter') sendBtn.click(); };
+
     </script>
 </body>
 </html>
