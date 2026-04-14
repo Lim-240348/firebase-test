@@ -6,51 +6,53 @@
     <title>Firebase Cloud App & Chat</title>
     <style>
         /* ОСНОВНЫЕ СТИЛИ */
-        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
         
         /* БЛОК ПРОФИЛЯ */
         .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; max-width: 500px; box-sizing: border-box;}
-        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
-
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; object-fit: cover; }
+ 
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 14px; }
         button:hover { background: #0056b3; }
         
         .btn-group { display: flex; gap: 10px; margin-left: auto; }
-        .logout-btn { background: #ff4757; padding: 8px 15px; width: auto; font-size: 14px; }
-        .chat-toggle-btn { background: #2ed573; padding: 8px 15px; width: auto; font-size: 14px; }
-
+        .logout-btn { background: #ff4757; padding: 8px 15px; width: auto; font-size: 12px; }
+        .chat-toggle-btn { background: #2ed573; padding: 8px 15px; width: auto; font-size: 12px; }
+ 
         /* ЛЕНТА ЗАЯВОК (FEED) */
         .post { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; width: 100%; max-width: 500px; box-sizing: border-box; border: 1px solid #eee; }
         .post-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-        .post-header b { font-size: 16px; }
+        .post-header b { font-size: 16px; color: #222; }
         .post-time { margin-left: auto; color: #999; font-size: 12px; }
-        .post-content { margin: 0 0 15px 0; color: #333; line-height: 1.5; }
-
+        .post-content { margin: 0 0 15px 0; color: #444; line-height: 1.5; font-size: 15px; }
+ 
         /* КНОПКА ЛАЙКА */
-        .like-badge { background: #f8f9fa; border-radius: 20px; padding: 5px 15px; display: inline-flex; align-items: center; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .like-badge { background: #f8f9fa; border-radius: 20px; padding: 6px 16px; display: inline-flex; align-items: center; cursor: pointer; transition: 0.2s; border: 1px solid transparent; user-select: none; }
         .like-badge:hover { background: #e9ecef; border-color: #ddd; }
         .like-count { margin-left: 8px; font-size: 13px; font-weight: bold; color: #555; }
-
+ 
         /* СТИЛИ ЧАТА */
         #chatSection { width: 100%; max-width: 500px; display: none; }
-        .users-list { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; margin-bottom: 15px; }
-        .user-card { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 65px; text-align: center;}
-        .user-card img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; }
-        .user-card.active img { border-color: #007bff; }
-        .user-card span { font-size: 11px; margin-top: 5px; color: #555; max-width: 65px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+        .users-list { display: flex; gap: 15px; overflow-x: auto; padding: 10px 5px; margin-bottom: 15px; scrollbar-width: thin; }
+        .user-card { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 70px; text-align: center; transition: 0.2s; }
+        .user-card img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid transparent; object-fit: cover; margin-bottom: 5px; }
+        .user-card.active img { border-color: #007bff; transform: scale(1.05); }
+        .user-card span { font-size: 11px; color: #555; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
         
-        .chat-container { display: flex; flex-direction: column; height: 350px; border: 1px solid #eee; border-radius: 8px; background: #fff; }
-        .chat-header { padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; background: #f9f9f9; border-radius: 8px 8px 0 0; }
-        .messages-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #fcfdfe; }
-        .msg { max-width: 75%; padding: 8px 12px; border-radius: 14px; font-size: 14px; word-wrap: break-word; }
+        .chat-container { display: flex; flex-direction: column; height: 400px; border: 1px solid #eee; border-radius: 12px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .chat-header { padding: 12px 15px; border-bottom: 1px solid #eee; font-weight: bold; background: #fdfdfd; border-radius: 12px 12px 0 0; color: #333; }
+        .messages-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #fcfdfe; }
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; word-wrap: break-word; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .msg.sent { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .msg.received { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 4px; }
+        
+        .input-area { display: flex; padding: 12px; gap: 10px; border-top: 1px solid #eee; background: #fff; border-radius: 0 0 12px 12px; }
     </style>
 </head>
 <body>
-
+ 
     <div id="authSection" class="container" style="text-align: center;">
         <button id="loginBtn">Войти через Google</button>
         <div id="userInfo" style="display: none;" class="auth-bar">
@@ -64,53 +66,53 @@
             </div>
         </div>
     </div>
-
+ 
     <div id="appSection">
-        <div id="messageForm" class="container" style="display: none;">
+        <div id="messageForm" class="container">
             <h3>Отправить заявку</h3>
-            <input type="text" id="name" placeholder="Ваше имя" readonly>
+            <input type="text" id="name" placeholder="Ваше имя">
             <input type="text" id="email" placeholder="Текст сообщения">
             <button id="mainBtn">Отправить в облако</button>
         </div>
         <div id="feed"></div>
     </div>
-
+ 
     <div id="chatSection">
         <div class="container">
-            <h3>Выберите собеседника:</h3>
+            <h3 style="margin-top: 0;">Ваши контакты</h3>
             <div class="users-list" id="usersList"></div>
             <div class="chat-container">
                 <div class="chat-header" id="chatHeader">Выберите, кому написать...</div>
                 <div class="messages-box" id="messagesBox"></div>
-                <div class="input-area" style="display: flex; padding: 10px; gap: 10px; border-top: 1px solid #eee;">
-                    <input type="text" id="messageInput" placeholder="Ваше сообщение..." style="flex:1; margin:0;">
-                    <button id="sendBtn" style="width: auto; padding: 0 15px;">➤</button>
+                <div class="input-area">
+                    <input type="text" id="messageInput" placeholder="Напишите сообщение..." style="flex:1; margin:0;">
+                    <button id="sendBtn" style="width: auto; padding: 0 20px;">➤</button>
                 </div>
             </div>
         </div>
     </div>
-
+ 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-        // КОНФИГУРАЦИЯ (Твоя)
+ 
+        // ТВОЙ КОНФИГ
         const firebaseConfig = {
             apiKey: "AIzaSyBx4U8l3IS2ZaLEJnSFUzpcqu3qlaJgy30",
             authDomain: "myproject-df6ca.firebaseapp.com",
             projectId: "myproject-df6ca"
         };
-
+ 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
-
+ 
+        // ЭЛЕМЕНТЫ
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const userInfo = document.getElementById('userInfo');
-        const messageForm = document.getElementById('messageForm');
         const mainBtn = document.getElementById('mainBtn');
         const toggleChatBtn = document.getElementById('toggleChatBtn');
         const appSection = document.getElementById('appSection');
@@ -121,91 +123,94 @@
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
         const feed = document.getElementById('feed');
-
+ 
         let currentUser = null;
         let activeChatUser = null;
         let unsubscribeMessages = null;
         let isChatOpen = false;
-
-        // --- ЛОГИКА АВТОРИЗАЦИИ (Этап III) ---
+ 
+        // 1. АВТОРИЗАЦИЯ
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 loginBtn.style.display = 'none';
                 userInfo.style.display = 'flex';
-                messageForm.style.display = 'block'; // Показываем форму входа (Этап III)
-                
                 document.getElementById('userName').innerText = user.displayName;
                 document.getElementById('userPhoto').src = user.photoURL;
                 document.getElementById('name').value = user.displayName;
-
+ 
+                // Сохраняем пользователя в БД, чтобы он появился в списке чатов
                 await setDoc(doc(db, "users", user.uid), {
-                    uid: user.uid, name: user.displayName, photo: user.photoURL
+                    uid: user.uid,
+                    name: user.displayName,
+                    photo: user.photoURL,
+                    lastSeen: serverTimestamp()
                 }, { merge: true });
-
+ 
                 loadUsers();
             } else {
                 currentUser = null;
                 loginBtn.style.display = 'block';
                 userInfo.style.display = 'none';
-                messageForm.style.display = 'none'; // Скрываем форму (Этап III)
                 appSection.style.display = 'block';
                 chatSection.style.display = 'none';
                 isChatOpen = false;
                 if (unsubscribeMessages) unsubscribeMessages();
             }
         });
-
+ 
         loginBtn.onclick = () => signInWithPopup(auth, provider);
         logoutBtn.onclick = () => signOut(auth);
-
+ 
+        // 2. ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
         toggleChatBtn.onclick = () => {
             isChatOpen = !isChatOpen;
             appSection.style.display = isChatOpen ? 'none' : 'block';
             chatSection.style.display = isChatOpen ? 'block' : 'none';
             toggleChatBtn.innerText = isChatOpen ? "📋 К заявкам" : "💬 Открыть чат";
         };
-
-        // --- ОТПРАВКА ЗАЯВОК (Этап IV) ---
+ 
+        // 3. ОТПРАВКА ЗАЯВОК (FEED)
         mainBtn.onclick = async () => {
             const n = document.getElementById("name").value.trim();
             const e = document.getElementById("email").value.trim();
             if (!n || !e) return alert("Заполните поля!");
-
+ 
             try {
+                // Если не вошел, правила Firebase (Rules) не дадут записать и выкинут в catch
                 await addDoc(collection(db, "requests"), {
                     name: n,
-                    email: e, 
+                    email: e,
                     timestamp: serverTimestamp(),
                     photo: currentUser ? currentUser.photoURL : 'https://via.placeholder.com/30',
                     likes: 0
                 });
                 document.getElementById("email").value = "";
             } catch (err) {
-                // Это сообщение появится, если правила в консоли запрещают запись (Этап IV)
+                // Это сообщение обязательно по методичке (Этап IV)
                 alert("Ошибка! Проверьте авторизацию и правила в консоли.");
             }
         };
-
-        // --- ЛЕНТА (FEED) ---
+ 
+        // 4. ОТОБРАЖЕНИЕ ЛЕНТЫ
         onSnapshot(query(collection(db, "requests"), orderBy("timestamp", "desc")), (snapshot) => {
             feed.innerHTML = "";
             if (snapshot.empty) {
                 feed.innerHTML = "<p style='text-align:center; color:#999;'>Сообщений пока нет...</p>";
                 return;
             }
-
+ 
             snapshot.forEach((requestDoc) => {
                 const data = requestDoc.data();
                 const id = requestDoc.id;
                 const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString() : "...";
                 const likes = data.likes || 0;
-
+ 
                 const post = document.createElement('div');
                 post.className = 'post';
                 post.innerHTML = `
                     <div class="post-header">
-                        <img src="${data.photo || 'https://via.placeholder.com/30'}" style="width:35px; height:35px; border-radius:50%">
+                        <img src="${data.photo || 'https://via.placeholder.com/30'}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">
                         <b>${data.name}</b>
                         <span class="post-time">${time}</span>
                     </div>
@@ -218,25 +223,27 @@
                 feed.appendChild(post);
             });
         });
-
-        // --- ЛАЙКИ (С защитой) ---
+ 
+        // 5. ЛАЙКИ
         window.addLike = async (id) => {
             if (!auth.currentUser) {
                 return alert("Войдите в аккаунт, чтобы ставить лайки!");
             }
             try {
-                await updateDoc(doc(db, "requests", id), { likes: increment(1) });
+                const docRef = doc(db, "requests", id);
+                await updateDoc(docRef, { likes: increment(1) });
             } catch (e) {
-                alert("Ошибка доступа! Проверьте правила Firestore.");
+                console.error("Ошибка лайка:", e);
             }
         };
-
-        // --- ЧАТ (Полностью твой) ---
+ 
+        // 6. ЧАТ: ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ
         function loadUsers() {
             onSnapshot(collection(db, "users"), (snapshot) => {
                 usersListDiv.innerHTML = "";
                 snapshot.forEach((doc) => {
                     const userData = doc.data();
+                    // Не показываем самих себя в списке
                     if (userData.uid !== currentUser?.uid) {
                         const card = document.createElement('div');
                         card.className = `user-card ${activeChatUser?.uid === userData.uid ? 'active' : ''}`;
@@ -250,14 +257,20 @@
                 });
             });
         }
-
+ 
+        // 7. ЧАТ: ВЫБОР СОБЕСЕДНИКА
         function selectUserChat(targetUser) {
             activeChatUser = targetUser;
             chatHeader.innerText = `Чат с: ${targetUser.name}`;
+            
+            // Перерисовываем список, чтобы подсветить активного
             loadUsers(); 
+ 
+            // Создаем уникальный ID чата для двух людей
             const chatId = [currentUser.uid, targetUser.uid].sort().join('_');
+            
             if (unsubscribeMessages) unsubscribeMessages();
-
+ 
             const q = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp", "asc"));
             unsubscribeMessages = onSnapshot(q, (snapshot) => {
                 messagesBox.innerHTML = "";
@@ -268,21 +281,35 @@
                     div.innerText = m.text;
                     messagesBox.appendChild(div);
                 });
+                // Автопрокрутка вниз
                 messagesBox.scrollTop = messagesBox.scrollHeight;
             });
         }
-
+ 
+        // 8. ЧАТ: ОТПРАВКА
         sendBtn.onclick = async () => {
             const txt = messageInput.value.trim();
             if (!txt || !activeChatUser) return;
+ 
             const chatId = [currentUser.uid, activeChatUser.uid].sort().join('_');
-            await addDoc(collection(db, "chats", chatId, "messages"), {
-                text: txt, senderId: currentUser.uid, timestamp: serverTimestamp()
-            });
-            messageInput.value = "";
+            
+            try {
+                await addDoc(collection(db, "chats", chatId, "messages"), {
+                    text: txt,
+                    senderId: currentUser.uid,
+                    timestamp: serverTimestamp()
+                });
+                messageInput.value = "";
+            } catch (e) {
+                console.error("Ошибка отправки сообщения:", e);
+            }
         };
-
-        messageInput.onkeypress = (e) => { if(e.key === 'Enter') sendBtn.click(); };
+ 
+        // Обработка Enter в чате
+        messageInput.onkeypress = (e) => {
+            if (e.key === 'Enter') sendBtn.click();
+        };
+ 
     </script>
 </body>
 </html>
